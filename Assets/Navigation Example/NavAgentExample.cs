@@ -12,14 +12,15 @@ public class NavAgentExample : MonoBehaviour
     /**
     *  VARIABLES
     * */
-    public AIWaypointNetwork waypointNetwork = null;
-    public int waypointIndex = 0;
-    public NavMeshPathStatus pathStatus = NavMeshPathStatus.PathInvalid;
-    public bool hasPath = false;
-    public bool pathPending = false;
+    public AIWaypointNetwork    waypointNetwork     = null;
+    public int                  waypointIndex       = 0;
+    public NavMeshPathStatus    pathStatus          = NavMeshPathStatus.PathInvalid;
+    public bool                 hasPath             = false;
+    public bool                 pathPending         = false;
+    public AnimationCurve       jumpCurve           = new AnimationCurve();
 
 
-    private NavMeshAgent _navAgent = null;
+    private NavMeshAgent        _navAgent           = null;
 
 
 
@@ -47,9 +48,18 @@ public class NavAgentExample : MonoBehaviour
     private void Update()
     {
         // Update the inspector to show us what is going on with our agent
-        pathStatus = _navAgent.pathStatus;
-        hasPath = _navAgent.hasPath;
-        pathPending = _navAgent.pathPending;
+        pathStatus      = _navAgent.pathStatus;
+        hasPath         = _navAgent.hasPath;
+        pathPending     = _navAgent.pathPending;
+
+
+
+        // We are going to run a coruotine if we are in a off mesh link
+        if(_navAgent.isOnOffMeshLink)
+        {
+            StartCoroutine(Jump(1.0f));
+            return;
+        }
 
 
 
@@ -102,5 +112,31 @@ public class NavAgentExample : MonoBehaviour
 
         // Increment our waypoint index
         waypointIndex++;
+    }
+
+
+
+    // We are going to handle the movement of our agent if we are in a off mesh link
+    IEnumerator Jump(float duration)
+    {
+        OffMeshLinkData     data        = _navAgent.currentOffMeshLinkData;
+        Vector3             startPos    = _navAgent.transform.position;
+        Vector3             endPos      = data.endPos + (_navAgent.baseOffset * Vector3.up);
+        float               time        = 0.0f;
+
+        while(time <= duration)
+        {
+            float t = time / duration;
+
+            _navAgent.transform.position = Vector3.Lerp(startPos, endPos, t) + jumpCurve.Evaluate(t) * Vector3.up;
+            time += Time.deltaTime;
+
+            yield return null;
+        }
+
+
+        // Let the agent know we are done handling the off mesh link behaviour
+        _navAgent.CompleteOffMeshLink();
+
     }
 }
