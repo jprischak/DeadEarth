@@ -14,8 +14,10 @@ public abstract class AIZombieState : AIState
 {
 
     // Private
-    protected int _playerLayerMask  = -1;
-    protected int _bodyPartLayer    = -1;
+    protected int                   _playerLayerMask        = -1;
+    protected int                   _bodyPartLayer          = -1;
+    protected int                   _visualLayerMask        = -1;
+    protected AIZombieStateMachine  _zombieStateMachine     = null;
 
 
 
@@ -29,11 +31,28 @@ public abstract class AIZombieState : AIState
         // Get a mask for line of sight testing with the player. (+1) is a hack to include the
         // default layer in the current version of unity.
         _playerLayerMask = LayerMask.GetMask("Player", "AI Body Part") + 1;
+        _visualLayerMask = LayerMask.GetMask("Player", "AI Body Part", "Visual Aggravator") + 1;
 
         // Get the layer index of the AI Body Part layer
         _bodyPartLayer = LayerMask.NameToLayer("AI Body Part");
+
+
+       
     }
 
+
+    // -------------------------------------------------------------------------------------
+    // Name	:	SetStateMachine
+    // Desc	:	Check for type compliance and store reference as derived type
+    // -------------------------------------------------------------------------------------
+    public override void SetStateMachine(AIStateMachine machine)
+    {
+        if(_stateMachine.GetType() == typeof(AIZombieStateMachine))
+        {
+            base.SetStateMachine(machine);
+            _zombieStateMachine = (AIZombieStateMachine)machine;
+        }
+    }
 
 
     // -------------------------------------------------------------------------------------
@@ -47,7 +66,7 @@ public abstract class AIZombieState : AIState
     public override void OnTriggerEvent(AITriggerEventType eventType, Collider other)
     {
         // If we don't have a parent state machine then bail
-        if (_stateMachine == null)
+        if (_zombieStateMachine == null)
             return;
 
 
@@ -56,20 +75,20 @@ public abstract class AIZombieState : AIState
         if (eventType != AITriggerEventType.Exit)
         {
             // What is the type of the current visual threat we have stored
-            AITargetType curType = _stateMachine.visualThreat.targetType;
+            AITargetType curType = _zombieStateMachine.visualThreat.targetType;
 
 
             // Is the collider that has entered our sensor a player
             if (other.CompareTag("Player"))
             {
                 // Get distance from the sensor origin to the collider
-                float distance = Vector3.Distance(_stateMachine.sensorPosition, other.transform.position);
+                float distance = Vector3.Distance(_zombieStateMachine.sensorPosition, other.transform.position);
 
 
                 // If the currently stored threat is not a player or if this player is closer than a player
                 // previously stored as the visual threat...this could be more important
                 if (curType != AITargetType.Visual_Player ||
-                    (curType == AITargetType.Visual_Player && distance < _stateMachine.visualThreat.distance))
+                    (curType == AITargetType.Visual_Player && distance < _zombieStateMachine.visualThreat.distance))
                 {
                     RaycastHit hitInfo;
 
@@ -77,10 +96,78 @@ public abstract class AIZombieState : AIState
                     if (ColliderIsVisible(other, out hitInfo, _playerLayerMask))
                     {
                         // Yep...it's close and in our FOV and we have line of sight so store as the current most dangerous threat
-                        _stateMachine.visualThreat.Set(AITargetType.Visual_Player, other, other.transform.position, distance);
+                        _zombieStateMachine.visualThreat.Set(AITargetType.Visual_Player, other, other.transform.position, distance);
                     }
                 }
             }
+            else
+            if (other.CompareTag("Flashlight") && curType != AITargetType.Visual_Player)
+            {
+                BoxCollider     flashLightTrigger   = (BoxCollider)other;
+                float           distanceToThreat    = Vector3.Distance(_zombieStateMachine.sensorPosition, flashLightTrigger.transform.position);
+                float           zSize               = flashLightTrigger.size.z * flashLightTrigger.transform.lossyScale.z;
+                float           aggrFactor          = distanceToThreat / zSize;
+
+                if (aggrFactor <= _zombieStateMachine.sight && aggrFactor <= _zombieStateMachine.intellignece)
+                    _zombieStateMachine.visualThreat.Set(AITargetType.Visual_Light, other, other.transform.position, distanceToThreat);
+
+            }
+            else
+            if (other.CompareTag("AI Sound Emitter"))
+            {
+                SphereCollider soundTrigger = (SphereCollider)other;
+                if (soundTrigger == null) return;
+
+
+                // Get the position of the Agent Sensor 
+                Vector3 agentSensorPosition = _zombieStateMachine.sensorPosition;
+
+                Vector3 soundPos;
+                float   soundRadius;
+                AIState.ConvertSphereColliderToWorldSpace(soundTrigger, out soundPos, out soundRadius);
+
+                // How far inside the sound's radius are we
+                float distanceToThreat = (soundPos - agentSensorPosition).magnitude;
+
+                // Calculate a distance factor such that it is 1.0 when at sound radius 0 when at center
+                float distanceFactor = (distanceToThreat / soundRadius);
+
+                // Bias the factor based on hearing ability of Agent.
+                distanceFactor += distanceFactor * (1.0f - _zombieStateMachine.hearing);
+
+                // Too far away
+                if (distanceFactor > 1.0f) return;
+
+                // if We can hear it and is it closer then what we previously have stored
+                if (distanceToThreat < _zombieStateMachine.audioThreat.distance)
+                    _zombieStateMachine.audioThreat.Set(AITargetType.Audio, other, soundPos, distanceToThreat);
+
+            }
+            // Register the closest visual threat
+            else
+            if ( other.CompareTag("AI Food") && 
+                curType != AITargetType.Visual_Player && 
+                curType != AITargetType.Visual_Light && 
+                _zombieStateMachine.audioThreat.targetType == AITargetType.None &&
+                _zombieStateMachine.satisfaction <= 0.9f)
+            {
+                // How far away is the threat from us
+                float distanceToThreat = Vector3.Distance(other.transform.position, _zombieStateMachine.sensorPosition);
+
+                // Is this smaller then anything we have previous stored
+                if (distanceToThreat < _zombieStateMachine.visualThreat.distance)
+                {
+                    // If so then check that it is in our FOV and it is within the range of this
+                    // AIs sight
+                    RaycastHit hitInfo;
+                    if(ColliderIsVisible(other, out hitInfo, _visualLayerMask))
+                    {
+                        // Yep this is our most appealing target so far
+                        _zombieStateMachine.visualThreat.Set(AITargetType.Visual_Food, other, other.transform.position, distanceToThreat);
+                    }
+                }
+            }
+
 
         }
     }
@@ -99,24 +186,24 @@ public abstract class AIZombieState : AIState
 
 
         // We need the state machine to be an AIZombieStateMachine
-        if (_stateMachine == null || _stateMachine.GetType() != typeof(AIZombieStateMachine))   return false;
-        AIZombieStateMachine zombieMachine = (AIZombieStateMachine)_stateMachine;
+        if (_zombieStateMachine == null) return false;
+
 
         // Calculate the angle between the sensor origin and the direction of the collider
-        Vector3     head        = _stateMachine.sensorPosition;
+        Vector3     head        = _zombieStateMachine.sensorPosition;
         Vector3     direction   = other.transform.position - head;
         float       angle       = -Vector3.Angle(direction, transform.forward);
 
 
         // If the angle is greater than half our FOV then it is outside the view cone so
         // return false - no visibility
-        if (angle > (zombieMachine.fov * 0.5f))
+        if (angle > (_zombieStateMachine.fov * 0.5f))
             return false;
 
 
         // Now we need to test line of sight. Perform a ray cast from our sensor origin in the direction of the collider for distance
         // of our sensor radius scaled by the zombie's sight ability. This will return ALL hits.
-        RaycastHit[] hits = Physics.RaycastAll(head, direction.normalized, _stateMachine.sensorRadius * zombieMachine.sight, layerMask);
+        RaycastHit[] hits = Physics.RaycastAll(head, direction.normalized, _zombieStateMachine.sensorRadius * _zombieStateMachine.sight, layerMask);
 
 
         // Find the closest collider that is NOT the AIs own body part. If its not the target then the target is obstructed

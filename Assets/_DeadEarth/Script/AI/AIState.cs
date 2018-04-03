@@ -48,9 +48,45 @@ public abstract class AIState : MonoBehaviour {
 
     // Public Method
     // Called by the parent state machine to assign its reference
-    public void SetStateMachine(AIStateMachine machine)
+    public virtual void SetStateMachine(AIStateMachine machine)
     {
         _stateMachine = machine;
+    }
+
+
+    // -----------------------------------------------------------------------------
+    // Name	:	ConvertSphereColliderToWorldSpace
+    // Desc	:	Converts the passed sphere collider's position and radius into
+    //			world space taking into acount hierarchical scaling.
+    // -----------------------------------------------------------------------------
+    public static void ConvertSphereColliderToWorldSpace(SphereCollider col, out Vector3 pos, out float radius)
+    {
+        // Default Values
+        pos = Vector3.zero;
+        radius  = 0.0f;
+
+
+        // If no valid sphere collider return
+        if (col == null) return;
+
+
+        // Calculate world space position of sphere center
+        pos = col.transform.position;
+        pos.x += col.center.x * col.transform.lossyScale.x;
+        pos.y += col.center.y * col.transform.lossyScale.y;
+        pos.z += col.center.z * col.transform.lossyScale.z;
+
+
+
+        // Calculate world space radius of sphere
+        radius = Mathf.Max( col.radius * col.transform.lossyScale.x,
+                            col.radius * col.transform.lossyScale.y);
+        radius = Mathf.Max( radius, 
+                            col.radius * col.transform.lossyScale.z);
+
+
+
+
     }
 
 
