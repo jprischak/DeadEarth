@@ -18,6 +18,7 @@ public abstract class AIZombieState : AIState
     protected int                   _bodyPartLayer          = -1;
     protected int                   _visualLayerMask        = -1;
     protected AIZombieStateMachine  _zombieStateMachine     = null;
+    
 
 
 
@@ -47,7 +48,7 @@ public abstract class AIZombieState : AIState
     // -------------------------------------------------------------------------------------
     public override void SetStateMachine(AIStateMachine machine)
     {
-        if(_stateMachine.GetType() == typeof(AIZombieStateMachine))
+        if(machine.GetType() == typeof(AIZombieStateMachine))
         {
             base.SetStateMachine(machine);
             _zombieStateMachine = (AIZombieStateMachine)machine;
