@@ -171,6 +171,8 @@ public abstract class AIStateMachine : MonoBehaviour {
             return _rootRotationRefCount > 0;
         }
     }
+    public AITargetType     targetType { get { return _target.targetType; } }
+    public Vector3          targetPosition { get { return _target.position; } }
 
 
 
@@ -440,9 +442,9 @@ public abstract class AIStateMachine : MonoBehaviour {
         // position and with the correct radius
         if (_targetTrigger != null)
         {
-            _targetTrigger.radius = s;
-            _targetTrigger.transform.position = _target.position;
-            _targetTrigger.enabled = true;
+            _targetTrigger.radius               = s;
+            _targetTrigger.transform.position   = _target.position;
+            _targetTrigger.enabled              = true;
         }
     }
 
@@ -459,9 +461,9 @@ public abstract class AIStateMachine : MonoBehaviour {
         // position and with the correct radius
         if (_targetTrigger != null)
         {
-            _targetTrigger.radius = _stoppingDistance;
-            _targetTrigger.transform.position = _target.position;
-            _targetTrigger.enabled = true;
+            _targetTrigger.radius               = _stoppingDistance;
+            _targetTrigger.transform.position   = _target.position;
+            _targetTrigger.enabled              = true;
         }
     }
 
@@ -478,9 +480,9 @@ public abstract class AIStateMachine : MonoBehaviour {
         // position and with the correct radius
         if (_targetTrigger != null)
         {
-            _targetTrigger.radius = _stoppingDistance;
-            _targetTrigger.transform.position = t.position;
-            _targetTrigger.enabled = true;
+            _targetTrigger.radius               = _stoppingDistance;
+            _targetTrigger.transform.position   = t.position;
+            _targetTrigger.enabled              = true;
         }
     }
 
