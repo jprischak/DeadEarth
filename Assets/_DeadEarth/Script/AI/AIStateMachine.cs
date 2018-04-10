@@ -80,9 +80,12 @@ public abstract class AIStateMachine : MonoBehaviour {
 
 
     // Serialized Protected allows the inspector to assign values but keeps other classes from changing
-    [SerializeField] protected SphereCollider   _targetTrigger       = null;
-    [SerializeField] protected SphereCollider   _sensorTrigger       = null;
-    [SerializeField] protected AIStateType      _currentStateType    = AIStateType.Idle;
+    [SerializeField] protected SphereCollider   _targetTrigger          = null;
+    [SerializeField] protected SphereCollider   _sensorTrigger          = null;
+    [SerializeField] protected AIStateType      _currentStateType       = AIStateType.Idle;
+    [SerializeField] AIWaypointNetwork          _waypointNetwork        = null;
+    [SerializeField] bool                       _randomPatrol           = false;
+    [SerializeField] int                        _currentWaypoint        = -1;
 
     [SerializeField] [Range(0, 15)] protected float     _stoppingDistance    = 1.0f;
 
@@ -99,6 +102,7 @@ public abstract class AIStateMachine : MonoBehaviour {
     protected Transform                             _transform              = null;
     protected int                                   _rootPositionRefCount   = 0;
     protected int                                   _rootRotationRefCount   = 0;
+    protected bool                                  _isTargetReached        = false;
 
 
 
@@ -140,6 +144,7 @@ public abstract class AIStateMachine : MonoBehaviour {
             return point;
         }
     }
+    public Vector3          targetPosition      { get { return _target.position; } }
     public float            sensorRadius
     {
         get
@@ -171,8 +176,20 @@ public abstract class AIStateMachine : MonoBehaviour {
             return _rootRotationRefCount > 0;
         }
     }
-    public AITargetType     targetType { get { return _target.targetType; } }
-    public Vector3          targetPosition { get { return _target.position; } }
+    public bool             inMeleeRange        { get; set; }
+    public bool             isTargetReached     { get { return _isTargetReached; } }
+    public AITargetType     targetType          { get { return _target.targetType; } }
+    public int              targetColliderID
+    {
+        get
+        {
+            if (_target.collider)
+                return _target.collider.GetInstanceID();
+            else
+                return -1;
+        }
+    }
+    
 
 
 
@@ -329,6 +346,9 @@ public abstract class AIStateMachine : MonoBehaviour {
         {
             _target.distance = Vector3.Distance(_transform.position, _target.position);
         }
+
+
+        _isTargetReached = false;
     }
 
 
@@ -345,6 +365,7 @@ public abstract class AIStateMachine : MonoBehaviour {
         if (_targetTrigger == null || other != _targetTrigger)
             return;
 
+        _isTargetReached = true;
 
         // Notify child state.
         if (_currentState)
@@ -363,9 +384,26 @@ public abstract class AIStateMachine : MonoBehaviour {
         if (_targetTrigger == null || _targetTrigger != other)
             return;
 
+        _isTargetReached = false;
+
         if (_currentState != null)
             _currentState.OnDestinationReached(false);
     }
+
+
+    // --------------------------------------------------------------------------
+    //	Name	:	OnTriggerStay
+    //	Desc	:	Informs the child state that the AI entity is still at
+    //				its destination 
+    // --------------------------------------------------------------------------
+    protected virtual void OnTriggerStay(Collider other)
+    {
+        if (_targetTrigger == null || other != _targetTrigger)
+            return;
+
+        _isTargetReached = true;
+    }
+
 
     // -----------------------------------------------------------
     // Name	:	OnAnimatorMove
@@ -507,6 +545,77 @@ public abstract class AIStateMachine : MonoBehaviour {
     {
         _rootPositionRefCount += rootPosition;
         _rootRotationRefCount += rootRotation;
+    }
+
+
+    // -----------------------------------------------------------------------------
+    // Name	:	GetWaypointPosition
+    // Desc	:	Fetched the world space position of the state machine's currently
+    //			set waypoint with optional increment
+    // -----------------------------------------------------------------------------
+    public Vector3 GetWaypointPosition(bool increment)
+    {
+        if (_currentWaypoint == -1)
+        {
+            if (_randomPatrol)
+                _currentWaypoint = Random.Range(0, _waypointNetwork.waypoints.Count);
+            else
+                _currentWaypoint = 0;
+        }
+        else
+        {
+            if (increment)
+                NextWaypoint();
+        }
+
+
+        // Fetch the new waypoint from the waypoint list
+        if (_waypointNetwork.waypoints[_currentWaypoint] != null)
+        {
+            Transform newWaypoint = _waypointNetwork.waypoints[_currentWaypoint];
+
+            // This is our new target position
+            SetTarget(AITargetType.Waypoint,
+                                            null,
+                                            newWaypoint.position,
+                                            Vector3.Distance(newWaypoint.position, transform.position));
+
+
+            return newWaypoint.position;
+        }
+
+
+        return Vector3.zero;
+       
+    }
+
+
+    // -------------------------------------------------------------------------
+    // Name	:	NextWaypoint
+    // Desc	:	Called to select a new waypoint. Either randomly selects a new
+    //			waypoint from the waypoint network or increments the current
+    //			waypoint index (with wrap-around) to visit the waypoints in
+    //			the network in sequence. Sets the new waypoint as the the
+    //			target and generates a nav agent path for it
+    // -------------------------------------------------------------------------
+    private void NextWaypoint()
+    {
+        // Increase the current waypoint with wrap-around to zero (or choose a random waypoint)
+        if (_randomPatrol && _waypointNetwork.waypoints.Count > 1)
+        {
+            // Keep generating random waypoint until we find one that isn't the current one
+            // NOTE: Very important that waypoint networks do not only have one waypoint :)
+            int oldWaypoint = _currentWaypoint;
+
+            while (_currentWaypoint == oldWaypoint)
+            {
+                _currentWaypoint = Random.Range(0, _waypointNetwork.waypoints.Count);
+            }
+
+        }
+        else
+            _currentWaypoint = _currentWaypoint == _waypointNetwork.waypoints.Count - 1 ? 0 : _currentWaypoint + 1;
+ 
     }
 
 }

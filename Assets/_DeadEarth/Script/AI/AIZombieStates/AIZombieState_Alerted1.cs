@@ -13,10 +13,12 @@ public class AIZombieState_Alerted1 : AIZombieState
     [SerializeField] [Range(1, 60)] float   _maxDuration                = 10.0f;
     [SerializeField] float                  _waypointAngleThreshold     = 90.0f;
     [SerializeField] float                  _threatAngleThreshold       = 10.0f;
+    [SerializeField] float                  _directionChangeTime        = 1.5f;
 
 
     // Private Variables
     private float _timer = 0.0f;
+    private float _directionChangeTimer = 0.0f;
 
 
     // ------------------------------------------------------------------
@@ -53,6 +55,7 @@ public class AIZombieState_Alerted1 : AIZombieState
 
 
         _timer = _maxDuration;
+        _directionChangeTimer = 0.0f;
     }
 
 
@@ -66,9 +69,18 @@ public class AIZombieState_Alerted1 : AIZombieState
         // No state machine then bail
         if (_zombieStateMachine == null) return AIStateType.Idle;
 
-
+        // Reduce Timer
         _timer -= Time.deltaTime;
-        if (_timer <= 0.0f) return AIStateType.Patrol;
+        _directionChangeTimer += Time.deltaTime;
+
+
+        // If we have been in the alerted state for too long, set our waypoint back as our target and look for it
+        if (_timer <= 0.0f)
+        {
+            _zombieStateMachine.navAgent.SetDestination(_zombieStateMachine.GetWaypointPosition(false));
+            _zombieStateMachine.navAgent.isStopped = false;
+            _timer = _maxDuration;
+        }
 
 
         // Is the player visible
@@ -105,8 +117,8 @@ public class AIZombieState_Alerted1 : AIZombieState
 
         float angle;
 
-        if( _zombieStateMachine.targetType == AITargetType.Audio ||
-            _zombieStateMachine.targetType == AITargetType.Visual_Light)
+        if( ( _zombieStateMachine.targetType == AITargetType.Audio ||
+            _zombieStateMachine.targetType == AITargetType.Visual_Light ) || _zombieStateMachine.isTargetReached)
         {
             angle = AIState.FindSignAngle(  _zombieStateMachine.transform.forward,
                                             _zombieStateMachine.targetPosition - _zombieStateMachine.transform.position);
@@ -117,18 +129,23 @@ public class AIZombieState_Alerted1 : AIZombieState
             }
 
 
-            if(Random.value < _zombieStateMachine.intellignece)
+            // This keeps an uniteligent zombie from constantly going between left and right with out actually moving
+            if(_directionChangeTimer > _directionChangeTime)
             {
-                _zombieStateMachine.seeking = (int)Mathf.Sign(angle);
+                if (Random.value < _zombieStateMachine.intellignece)               
+                    _zombieStateMachine.seeking = (int)Mathf.Sign(angle);
+                
+                else
+                   _zombieStateMachine.seeking = (int)Mathf.Sign(Random.Range(-1.0f, 1.0f));
+                
+
+                _directionChangeTimer = 0.0f;
             }
-            else
-            {
-                _zombieStateMachine.seeking = (int)Mathf.Sign(Random.Range(-1.0f, 1.0f));
-            }
+            
 
         }
         else 
-        if(_zombieStateMachine.targetType == AITargetType.Waypoint)
+        if(_zombieStateMachine.targetType == AITargetType.Waypoint && !_zombieStateMachine.navAgent.pathPending)
         {
             angle = AIState.FindSignAngle(  _zombieStateMachine.transform.forward,
                                             _zombieStateMachine.navAgent.steeringTarget - _zombieStateMachine.transform.position);
