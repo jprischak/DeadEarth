@@ -23,6 +23,8 @@ public class AIZombieStateMachine : AIStateMachine
     [SerializeField] [Range(0.0f, 1.0f)]    float       _aggression     = 0.5f;
     [SerializeField] [Range(0.0f, 1.0f)]    float       _intelligence   = 0.5f;
     [SerializeField] [Range(0.0f, 1.0f)]    float       _satisfaction   = 1.0f;
+    [SerializeField]                        float       _replenishRate  = 0.5f;
+    [SerializeField]                        float       _depleshenRate  = 0.1f;
 
 
 
@@ -49,6 +51,7 @@ public class AIZombieStateMachine : AIStateMachine
     public float    aggression      { get { return _aggression; }       set { _aggression = value; } }
     public float    intellignece    { get { return _intelligence; } }
     public float    speed           { get { return _speed; }            set { _speed = value; } }
+    public float    replenishRate   { get { return _replenishRate; } }
     public int      health          { get { return _health; }           set { _health = value; } }
     public int      attackType      { get { return _attackType; }       set { _attackType = value; } }
     public int      seeking         { get { return _seeking; }          set { _seeking = value; } }

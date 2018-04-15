@@ -22,12 +22,13 @@ public class GameSceneManager : MonoBehaviour {
 
 
     // Serialized
-
+    [SerializeField] private ParticleSystem         _bloodParticles     = null;
 
 
     // Private
     private static GameSceneManager                 _Instance           = null;
     private Dictionary<int, AIStateMachine>         _StateMachine       = new Dictionary<int, AIStateMachine>();
+    
 
 
 
@@ -69,6 +70,9 @@ public class GameSceneManager : MonoBehaviour {
             return _Instance;
         }
     }
+
+
+    public ParticleSystem bloodParticles { get { return _bloodParticles; } }
 
 
 
