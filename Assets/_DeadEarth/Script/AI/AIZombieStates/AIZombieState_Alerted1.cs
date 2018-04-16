@@ -106,7 +106,8 @@ public class AIZombieState_Alerted1 : AIZombieState
 
         // Is the threat food
         if (_zombieStateMachine.audioThreat.targetType == AITargetType.None &&
-            _zombieStateMachine.visualThreat.targetType == AITargetType.Visual_Food)
+            _zombieStateMachine.visualThreat.targetType == AITargetType.Visual_Food &&
+            _zombieStateMachine.targetType == AITargetType.None)
         {
             _zombieStateMachine.SetTarget(_zombieStateMachine.visualThreat);
             return AIStateType.Pursuit;
@@ -155,9 +156,14 @@ public class AIZombieState_Alerted1 : AIZombieState
 
             _zombieStateMachine.seeking = (int)Mathf.Sign(angle);
         }
-
-
-
+        else
+        {
+            if(_directionChangeTimer > _directionChangeTime)
+            {
+                _zombieStateMachine.seeking = (int)Mathf.Sign(Random.Range(-1.0f, 1.0f));
+                _directionChangeTimer = 0.0f;
+            }
+        }
 
 
 
