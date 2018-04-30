@@ -167,8 +167,9 @@ public class FPSController : MonoBehaviour
     [SerializeField] private float                  _stickToGroundForce         = 5.0f;
     [SerializeField] private float                  _gravityMultiplier          = 2.5f;
     [SerializeField] private float                  _runStepLengthen            = 0.75f;
-    [SerializeField] private CurveControlledBob     _headBob                    = new CurveControlledBob();
     [SerializeField] private GameObject             _flashLight                 = null;
+    [SerializeField] private CurveControlledBob     _headBob                    = new CurveControlledBob();
+    
 
 
     // Use Standard Assets Mouse Look cass for mouse input -> Camera Look Control

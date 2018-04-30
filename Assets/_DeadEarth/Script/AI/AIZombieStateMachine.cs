@@ -82,5 +82,9 @@ public class AIZombieStateMachine : AIStateMachine
 			_animator.SetInteger    (_attackHash ,     _attackType);
 
 		}
+
+
+        // Removes satisfaction from the zombie as they move around the scene
+        _satisfaction = Mathf.Max(0, _satisfaction - ( (_depleshenRate * Time.deltaTime) / 100) * Mathf.Pow(_speed, 3.0f));
 	}
 }

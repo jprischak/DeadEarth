@@ -2,6 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+
+// -----------------------------------------------------------------
+// Class	: AIZombieState_Feeding1
+// Desc		: A Zombie state used for feeding
+// -----------------------------------------------------------------
 public class AIZombieState_Feeding1 : AIZombieState
 {
 
