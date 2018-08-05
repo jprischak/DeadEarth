@@ -11256,6 +11256,7 @@ GameObject:
   - component: {fileID: 690383910}
   - component: {fileID: 690383909}
   - component: {fileID: 690383911}
+  - component: {fileID: 690383915}
   - component: {fileID: 690383913}
   - component: {fileID: 690383912}
   - component: {fileID: 690383914}
@@ -11545,6 +11546,21 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &690383915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 690383908}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 215464fe5a7654c44ae4b9d9962d753f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _meleeTrigger: {fileID: 2043538448}
+  _cameraBloodEffect: {fileID: 1109756816}
+  _camera: {fileID: 1109756814}
+  _health: 100
 --- !u!1 &694688682
 GameObject:
   m_ObjectHideFlags: 0
@@ -17196,6 +17212,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _paramater: Mouth
+  _bloodParticleBurstAmount: 10
+  _damageAmount: 10
 --- !u!136 &840222732
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -19391,6 +19409,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _paramater: RightHand
+  _bloodParticleBurstAmount: 10
+  _damageAmount: 50
 --- !u!135 &944552616
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -22107,6 +22127,7 @@ GameObject:
   - component: {fileID: 1109756813}
   - component: {fileID: 1109756814}
   - component: {fileID: 1109756815}
+  - component: {fileID: 1109756816}
   m_Layer: 11
   m_Name: FPS Camea
   m_TagString: MainCamera
@@ -22171,6 +22192,25 @@ AudioListener:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1109756812}
   m_Enabled: 1
+--- !u!114 &1109756816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1109756812}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22072e00a4eb3a0478742efa3a77ac1f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _shader: {fileID: 4800000, guid: 94a80050a8170cb499046cc46f8986e6, type: 3}
+  _bloodTexture: {fileID: 2800000, guid: 29b95e392a360f64799b13ad12fdee55, type: 3}
+  _bloodNormalMap: {fileID: 2800000, guid: 7423789af967b7d4b8562a7f33936544, type: 3}
+  _bloodAmount: 0
+  _minBloodAmount: 0
+  _distortion: 0.14
+  _autoFade: 1
+  _fadeSpeed: 0.05
 --- !u!1 &1110693027
 GameObject:
   m_ObjectHideFlags: 0
@@ -38174,6 +38214,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _paramater: LeftHand
+  _bloodParticleBurstAmount: 10
+  _damageAmount: 50
 --- !u!135 &2020304120
 SphereCollider:
   m_ObjectHideFlags: 0

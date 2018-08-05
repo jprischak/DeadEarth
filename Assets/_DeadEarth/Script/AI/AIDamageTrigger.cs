@@ -12,13 +12,15 @@ public class AIDamageTrigger : MonoBehaviour {
     // Inspector assigned
     [SerializeField] string     _paramater                  = "";
     [SerializeField] int        _bloodParticleBurstAmount   = 10;
+    [SerializeField] float      _damageAmount               = 0.1f;
 
 
 
     // Private variables
-    private AIStateMachine  _stateMachine       = null;
-    private Animator        _animator           = null;
-    private int             _paramaterHash      = -1;
+    private AIStateMachine      _stateMachine       = null;
+    private Animator            _animator           = null;
+    private int                 _paramaterHash      = -1;
+    private GameSceneManager    _gameSceneManager   = null;
 
 
 
@@ -31,12 +33,15 @@ public class AIDamageTrigger : MonoBehaviour {
         // Cache state machine and animator references
         _stateMachine = transform.root.GetComponentInChildren<AIStateMachine>();
 
+        _gameSceneManager = GameSceneManager.instance;
+
 
         if (_animator == null)
             _animator = _stateMachine.aninimator;
 
         // Generate parameter hash for more efficient parameter lookups from the animator
         _paramaterHash = Animator.StringToHash(_paramater);
+
     }
 
 
@@ -67,7 +72,15 @@ public class AIDamageTrigger : MonoBehaviour {
             }
 
 
-            Debug.Log("Player being damaged!");
+            if(_gameSceneManager != null)
+            {
+                PlayerInfo info = _gameSceneManager.GetPlayerInfo(other.GetInstanceID());
+
+                if(info != null && info.characterManager != null)
+                {
+                    info.characterManager.TakeDamage(_damageAmount);
+                }
+            }
         }
     }
 }
